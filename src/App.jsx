@@ -403,11 +403,22 @@ const Divider = () => (
 );
 
 // ─── Screen: Home ─────────────────────────────────────────────────────────────
-function HomeScreen({ onViewGarment }) {
+function HomeScreen({ onViewGarment, onGoToBrowse }) {
   const [selectedOccasion, setSelectedOccasion] = useState(null);
-  const filtered = selectedOccasion
-    ? GARMENTS.filter(g => g.occasion.includes(selectedOccasion))
-    : GARMENTS;
+  const [searchQuery, setSearchQuery]           = useState('');
+  const [searchOpen, setSearchOpen]             = useState(false);
+
+  const HOME_OCCASIONS = OCCASIONS.slice(0, 2);
+
+  const filtered = GARMENTS.filter(g => {
+    const occOk    = !selectedOccasion || g.occasion.includes(selectedOccasion);
+    const queryLow = searchQuery.trim().toLowerCase();
+    const searchOk = !queryLow ||
+      g.name.toLowerCase().includes(queryLow) ||
+      g.occasion.some(o => o.toLowerCase().includes(queryLow)) ||
+      g.type.toLowerCase().includes(queryLow);
+    return occOk && searchOk;
+  });
 
   return (
     <div>
@@ -448,14 +459,11 @@ function HomeScreen({ onViewGarment }) {
           </p>
         </div>
 
-        {/* Occasion pills */}
+        {/* Occasion pills + search */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>What's the occasion?</SectionLabel>
-          <div style={{
-            display: 'flex', gap: 8, overflowX: 'auto',
-            paddingBottom: 4, scrollbarWidth: 'none',
-          }}>
-            {OCCASIONS.map(occ => {
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {HOME_OCCASIONS.map(occ => {
               const active = selectedOccasion === occ;
               return (
                 <button
@@ -474,13 +482,56 @@ function HomeScreen({ onViewGarment }) {
                 </button>
               );
             })}
+
+            {/* Search bar */}
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center',
+              height: 36, borderRadius: 20,
+              background: C.cream,
+              border: searchOpen ? `1px solid ${C.terracotta}` : `0.5px solid ${C.linen}`,
+              overflow: 'hidden', transition: 'border 0.15s',
+            }}>
+              {searchOpen && (
+                <input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                  placeholder="Search…"
+                  style={{
+                    flex: 1, border: 'none', background: 'transparent',
+                    padding: '0 12px', fontSize: 13, color: C.umber,
+                    fontFamily: 'inherit', outline: 'none',
+                  }}
+                />
+              )}
+              <button
+                onClick={() => {
+                  if (searchOpen && searchQuery) { setSearchQuery(''); setSearchOpen(false); }
+                  else setSearchOpen(s => !s);
+                }}
+                style={{
+                  flexShrink: 0, width: 36, height: 36, border: 'none',
+                  background: 'transparent', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: searchOpen && searchQuery ? C.terracotta : C.stone,
+                  fontSize: 15,
+                }}
+              >
+                {searchOpen && searchQuery ? '✕' : '⌕'}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Featured listings */}
         <div>
           <SectionLabel>
-            {selectedOccasion ? `Featured — ${selectedOccasion}` : 'Featured listings'}
+            {searchQuery.trim()
+              ? `Results for "${searchQuery.trim()}"`
+              : selectedOccasion
+                ? `Featured — ${selectedOccasion}`
+                : 'Featured listings'}
           </SectionLabel>
           {filtered.length === 0 ? (
             <div style={{ color: C.stone, padding: '40px 0', fontSize: 14, textAlign: 'center' }}>
@@ -567,8 +618,9 @@ function BrowseScreen({ onViewGarment }) {
 
 // ─── Screen: Garment Detail ───────────────────────────────────────────────────
 function GarmentDetail({ garment, onBack }) {
-  const [modal, setModal] = useState(false);
-  const [unit, setUnit]   = useState('in');
+  const [modal, setModal]                   = useState(false);
+  const [unit, setUnit]                     = useState('in');
+  const [sellerReviewsOpen, setSellerReviewsOpen] = useState(false);
 
   const priceLow  = garment.buyPrice ? Math.round(garment.buyPrice * 0.88) : garment.rentPrice * 3;
   const priceHigh = garment.buyPrice ? Math.round(garment.buyPrice * 1.06) : garment.rentPrice * 4;
@@ -576,6 +628,7 @@ function GarmentDetail({ garment, onBack }) {
   return (
     <div>
       {modal && <Modal onClose={() => setModal(false)} />}
+      {sellerReviewsOpen && <SellerReviewsSheet garment={garment} onClose={() => setSellerReviewsOpen(false)} />}
 
       {/* Back bar */}
       <div style={{
@@ -701,16 +754,24 @@ function GarmentDetail({ garment, onBack }) {
 
         {/* Seller */}
         <Section title="Seller">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            onClick={() => setSellerReviewsOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              cursor: 'pointer', padding: '10px 12px',
+              background: C.cream, borderRadius: 8,
+              border: `0.5px solid ${C.linen}`,
+            }}
+          >
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
-              background: C.cream, border: `0.5px solid ${C.linen}`,
+              background: C.parchment, border: `0.5px solid ${C.linen}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 14, color: C.stone, flexShrink: 0,
             }}>
               ◯
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 500, color: C.umber }}>
                 {garment.sellerName}
               </div>
@@ -718,6 +779,7 @@ function GarmentDetail({ garment, onBack }) {
                 ⭐ {garment.sellerRating} · {garment.sellerRentals} rentals
               </div>
             </div>
+            <span style={{ fontSize: 18, color: C.terracotta, lineHeight: 1 }}>›</span>
           </div>
         </Section>
       </div>
@@ -736,6 +798,7 @@ function ListGarmentScreen() {
   const [sellCondition, setSellCondition] = useState(null);
   const [measUnit, setMeasUnit]           = useState('in');
   const [meas, setMeas]                   = useState({ bust:'', waist:'', hip:'', skirtLength:'', blouseLength:'' });
+  const [description, setDescription]     = useState('');
   const [listType, setListType]           = useState('both');
   const [salePrice, setSalePrice]         = useState('');
   const [rentPrice, setRentPrice]         = useState('');
@@ -745,7 +808,7 @@ function ListGarmentScreen() {
     setStep(1); setSubmitted(false); setGarmentName(''); setGarmentType('');
     setSellOccasion(null); setSellCondition(null);
     setMeas({ bust:'', waist:'', hip:'', skirtLength:'', blouseLength:'' });
-    setSalePrice(''); setRentPrice('');
+    setDescription(''); setSalePrice(''); setRentPrice('');
   }
 
   if (submitted) {
@@ -814,18 +877,60 @@ function ListGarmentScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
               <FieldLabel>Photos</FieldLabel>
+
+              {/* Upload zone */}
               <div style={{
                 width: '100%', aspectRatio: '4/3', background: C.cream,
-                border: `0.5px dashed ${C.linen}`, borderRadius: 6,
+                border: `1.5px dashed ${C.linen}`, borderRadius: 8,
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', cursor: 'pointer', color: C.stone,
+                marginBottom: 12,
               }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>↑</div>
+                <div style={{ fontSize: 28, marginBottom: 8, color: C.terracotta }}>↑</div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: C.umber }}>
                   Upload photos
                 </div>
                 <div style={{ fontSize: 12, color: C.stone, marginTop: 4 }}>
-                  Up to 6 photos
+                  Up to 6 photos · JPG or PNG
+                </div>
+              </div>
+
+              {/* Photo guidelines */}
+              <div style={{
+                background: C.parchment, border: `0.5px solid ${C.linen}`,
+                borderRadius: 8, padding: '14px 14px',
+              }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 500, color: C.terracotta,
+                  textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10,
+                }}>
+                  Photo guidelines
+                </div>
+                {[
+                  ['📸', 'Use your own real photos', 'No stock images or photos from other sellers'],
+                  ['💡', 'Shoot in natural light', 'Lay flat or hang on a hanger — avoid dark rooms'],
+                  ['🔍', 'Show any flaws clearly', 'Close-ups of stains, wear, or repairs build trust'],
+                  ['📐', 'Include all angles', 'Front, back, detail shots, and any embellishments'],
+                ].map(([icon, title, sub]) => (
+                  <div key={title} style={{
+                    display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10,
+                  }}>
+                    <span style={{ fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>{icon}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: C.umber, lineHeight: 1.4 }}>
+                        {title}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.stone, lineHeight: 1.5 }}>
+                        {sub}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{
+                  marginTop: 4, paddingTop: 10, borderTop: `0.5px solid ${C.linen}`,
+                  fontSize: 11, color: C.stone, lineHeight: 1.6,
+                }}>
+                  Listings with real, clear photos rent <span style={{ color: C.umber, fontWeight: 500 }}>3× faster</span> on DRAPED.
                 </div>
               </div>
             </div>
@@ -894,6 +999,27 @@ function ListGarmentScreen() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                <FieldLabel style={{ margin: 0 }}>Description</FieldLabel>
+                <span style={{ fontSize: 11, color: description.length > 180 ? C.terracotta : C.stone }}>
+                  {description.length}/200
+                </span>
+              </div>
+              <textarea
+                value={description}
+                onChange={e => { if (e.target.value.length <= 200) setDescription(e.target.value); }}
+                placeholder="Briefly describe the garment — fabric, colour, any notable details or wear."
+                rows={3}
+                style={{
+                  width: '100%', border: `0.5px solid ${C.linen}`, borderRadius: 6,
+                  padding: '12px 14px', fontSize: 14, color: C.umber, background: C.white,
+                  fontFamily: 'inherit', lineHeight: 1.6, resize: 'none', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
           </div>
         )}
@@ -1073,6 +1199,142 @@ const STATUS_STYLE = {
   rented: { bg: '#E0EDE4', color: '#2A5035', label: 'Rented out' },
   sold:   { bg: '#F0E8DE', color: '#5C3E26', label: 'Sold'       },
 };
+
+// ─── Seller review generator ─────────────────────────────────────────────────
+const REVIEWER_POOL = [
+  'Anika R.','Sunita M.','Deepa K.','Yasmin A.','Ritu S.',
+  'Layla H.','Divya P.','Sara N.','Komal T.','Aarti B.',
+  'Preethi J.','Neha V.','Sana F.','Tara L.','Misha G.',
+];
+const DATE_POOL = [
+  '3 days ago','1 week ago','2 weeks ago','3 weeks ago',
+  '1 month ago','6 weeks ago','2 months ago','3 months ago',
+];
+const COMMENTS_5 = [
+  'Item exactly as described. Would rent again!',
+  'Perfect condition, beautifully packaged.',
+  'Smooth transaction. Highly recommend.',
+  'Beautiful piece — thank you!',
+  'Arrived on time, just as pictured.',
+  'Stunning garment. Fast communication too.',
+  null,
+];
+const COMMENTS_4 = [
+  'Good seller, fast communication.',
+  'Great piece, slightly different shade in person.',
+  'Would rent again.',
+  'Good experience overall.',
+  'Item in good condition as described.',
+  null,
+];
+
+function getSellerReviews(sellerName, sellerRating, sellerRentals) {
+  const seed  = sellerName.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+  const count = Math.min(sellerRentals, 5);
+  // threshold: rating 4.9 → 90% five-stars, rating 4.5 → 50% five-stars
+  const fiveThreshold = Math.round((sellerRating - 4) * 10);
+  return Array.from({ length: count }, (_, i) => {
+    const stars   = (seed * (i + 1)) % 10 < fiveThreshold ? 5 : 4;
+    const pool    = stars === 5 ? COMMENTS_5 : COMMENTS_4;
+    const comment = pool[(seed + i * 7) % pool.length];
+    return {
+      id:       i,
+      stars,
+      comment,
+      reviewer: REVIEWER_POOL[(seed + i * 3) % REVIEWER_POOL.length],
+      date:     DATE_POOL[(seed + i * 2) % DATE_POOL.length],
+    };
+  });
+}
+
+// ─── Seller reviews sheet ─────────────────────────────────────────────────────
+function SellerReviewsSheet({ garment, onClose }) {
+  const reviews = getSellerReviews(garment.sellerName, garment.sellerRating, garment.sellerRentals);
+  const avg     = garment.sellerRating;
+  const total   = garment.sellerRentals;
+
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: 'fixed', inset: 0, background: 'rgba(44,36,24,0.4)', zIndex: 300,
+      }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 390, background: C.parchment,
+        borderRadius: '16px 16px 0 0', zIndex: 301,
+        maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: C.linen }} />
+        </div>
+
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 20px 14px', borderBottom: `0.5px solid ${C.linen}`,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 20, fontWeight: 400, color: C.umber,
+            }}>
+              {garment.sellerName}
+            </div>
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 2 }}>Seller profile</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: C.stone, lineHeight: 1, padding: 0, fontFamily: 'inherit',
+          }}>×</button>
+        </div>
+
+        {/* Aggregate */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '16px 20px', borderBottom: `0.5px solid ${C.linen}`,
+        }}>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 40, fontWeight: 400, color: C.umber, lineHeight: 1,
+          }}>{avg.toFixed(1)}</span>
+          <div>
+            <Stars count={Math.round(avg)} />
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 3 }}>
+              {total} rental{total !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 32px' }}>
+          {reviews.map((r, i) => (
+            <div key={r.id}>
+              <div style={{ padding: '16px 0' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between', marginBottom: 6,
+                }}>
+                  <Stars count={r.stars} />
+                  <span style={{ fontSize: 12, color: C.stone }}>{r.date}</span>
+                </div>
+                {r.comment && (
+                  <p style={{ fontSize: 14, color: C.umber, lineHeight: 1.7, margin: '0 0 6px' }}>
+                    "{r.comment}"
+                  </p>
+                )}
+                <div style={{ fontSize: 12, color: C.stone }}>{r.reviewer}</div>
+              </div>
+              {i < reviews.length - 1 && (
+                <div style={{ height: '0.5px', background: C.linen }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
 
 const SELLER_REVIEWS = [
   { id: 1, stars: 5, comment: 'Item arrived in perfect condition. Would rent again!', reviewer: 'Aisha K.', date: '2 weeks ago',  type: 'Rental' },
