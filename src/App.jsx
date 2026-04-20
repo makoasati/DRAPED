@@ -1074,6 +1074,136 @@ const STATUS_STYLE = {
   sold:   { bg: '#F0E8DE', color: '#5C3E26', label: 'Sold'       },
 };
 
+const SELLER_REVIEWS = [
+  { id: 1, stars: 5, comment: 'Item arrived in perfect condition. Would rent again!', reviewer: 'Aisha K.', date: '2 weeks ago',  type: 'Rental' },
+  { id: 2, stars: 5, comment: 'Thanks Priya! The lehenga was exactly as described.',  reviewer: 'Simran B.', date: '1 month ago',  type: 'Rental' },
+  { id: 3, stars: 4, comment: 'Good seller, fast communication.',                     reviewer: 'Meera D.',  date: '1 month ago',  type: 'Sale'   },
+  { id: 4, stars: 5, comment: null,                                                   reviewer: 'Nadia H.',  date: '2 months ago', type: 'Rental' },
+  { id: 5, stars: 4, comment: 'Beautiful piece, very well packaged.',                 reviewer: 'Fatima A.', date: '3 months ago', type: 'Sale'   },
+];
+
+const BUYER_REVIEWS = [
+  { id: 1, stars: 5, comment: 'Great renter — returned the piece in perfect condition.', reviewer: 'Kavitha R.', date: '3 weeks ago',  type: 'Rental' },
+  { id: 2, stars: 5, comment: null,                                                      reviewer: 'Zara Q.',    date: '1 month ago',  type: 'Rental' },
+  { id: 3, stars: 4, comment: 'Smooth transaction, would rent to again.',                reviewer: 'Rohan M.',   date: '2 months ago', type: 'Rental' },
+  { id: 4, stars: 5, comment: 'Very careful with the garment. Highly recommend.',        reviewer: 'Pooja V.',   date: '2 months ago', type: 'Purchase' },
+  { id: 5, stars: 4, comment: 'Good communication throughout.',                          reviewer: 'Preethi S.', date: '3 months ago', type: 'Purchase' },
+];
+
+// ─── Reviews bottom sheet ─────────────────────────────────────────────────────
+function Stars({ count }) {
+  return (
+    <span style={{ letterSpacing: 1 }}>
+      {[1,2,3,4,5].map(i => (
+        <span key={i} style={{ color: i <= count ? C.terracotta : C.linen, fontSize: 13 }}>★</span>
+      ))}
+    </span>
+  );
+}
+
+function ReviewsSheet({ onClose }) {
+  const [tab, setTab] = useState('seller');
+  const reviews       = tab === 'seller' ? SELLER_REVIEWS : BUYER_REVIEWS;
+  const avg           = reviews.reduce((s, r) => s + r.stars, 0) / reviews.length;
+  const totalSeller   = 28;
+  const totalBuyer    = 14;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{
+        position: 'fixed', inset: 0, background: 'rgba(44,36,24,0.4)', zIndex: 300,
+      }} />
+
+      {/* Sheet */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 390, background: C.parchment,
+        borderRadius: '16px 16px 0 0', zIndex: 301,
+        maxHeight: '82vh', display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: C.linen }} />
+        </div>
+
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 20px 14px', borderBottom: `0.5px solid ${C.linen}`,
+        }}>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 20, fontWeight: 400, color: C.umber,
+          }}>Reviews</span>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: C.stone, lineHeight: 1, padding: 0, fontFamily: 'inherit',
+          }}>×</button>
+        </div>
+
+        {/* Role tabs */}
+        <div style={{ display: 'flex', gap: 8, padding: '14px 20px 0' }}>
+          {[['seller', `As seller · ${totalSeller}`], ['buyer', `As buyer · ${totalBuyer}`]].map(([val, label]) => (
+            <button key={val} onClick={() => setTab(val)} style={{
+              height: 36, padding: '0 16px', borderRadius: 20, border: 'none',
+              background: tab === val ? C.umber : C.cream,
+              color: tab === val ? C.parchment : '#4A3F2C',
+              fontSize: 13, fontWeight: 500, letterSpacing: '0.03em',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {/* Aggregate score */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '16px 20px', borderBottom: `0.5px solid ${C.linen}`,
+        }}>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 40, fontWeight: 400, color: C.umber, lineHeight: 1,
+          }}>{avg.toFixed(1)}</span>
+          <div>
+            <Stars count={Math.round(avg)} />
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 3 }}>
+              {tab === 'seller' ? totalSeller : totalBuyer} reviews
+            </div>
+          </div>
+        </div>
+
+        {/* Review list */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 32px' }}>
+          {reviews.map((r, i) => (
+            <div key={r.id}>
+              <div style={{ padding: '16px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Stars count={r.stars} />
+                  <span style={{
+                    fontSize: 11, fontWeight: 500, color: C.stone,
+                    background: C.cream, borderRadius: 20, padding: '2px 10px',
+                  }}>{r.type}</span>
+                </div>
+                {r.comment && (
+                  <p style={{ fontSize: 14, color: C.umber, lineHeight: 1.7, margin: '0 0 6px' }}>
+                    "{r.comment}"
+                  </p>
+                )}
+                <div style={{ fontSize: 12, color: C.stone }}>
+                  {r.reviewer} · {r.date}
+                </div>
+              </div>
+              {i < reviews.length - 1 && (
+                <div style={{ height: '0.5px', background: C.linen }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Burger menu drawer ───────────────────────────────────────────────────────
 function BurgerDrawer({ onClose }) {
   const items = [
@@ -1175,14 +1305,16 @@ function BurgerDrawer({ onClose }) {
 
 // ─── Screen: Profile ──────────────────────────────────────────────────────────
 function ProfileScreen({ onViewGarment }) {
-  const [listingTab, setListingTab] = useState('active');
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [listingTab, setListingTab]   = useState('active');
+  const [drawerOpen, setDrawerOpen]   = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
 
   const visibleListings = MY_LISTINGS.filter(g => g.status === listingTab);
 
   return (
     <div style={{ position: 'relative' }}>
-      {drawerOpen && <BurgerDrawer onClose={() => setDrawerOpen(false)} />}
+      {drawerOpen  && <BurgerDrawer onClose={() => setDrawerOpen(false)} />}
+      {reviewsOpen && <ReviewsSheet onClose={() => setReviewsOpen(false)} />}
 
       {/* ── Profile Header ── */}
       <div style={{ background: C.cream, padding: '24px 16px 20px', position: 'relative' }}>
@@ -1223,9 +1355,19 @@ function ProfileScreen({ onViewGarment }) {
             <div style={{ fontSize: 12, color: C.stone, marginBottom: 6 }}>
               Member since March 2024
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.umber }}>
-              ⭐ 4.9 · 28 reviews
-            </div>
+            <button
+              onClick={() => setReviewsOpen(true)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: 0, fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 500, color: C.umber }}>
+                ⭐ 4.9 · 28 reviews
+              </span>
+              <span style={{ fontSize: 11, color: C.terracotta }}>›</span>
+            </button>
           </div>
         </div>
 
@@ -1336,7 +1478,7 @@ function BottomNav({ screen, setScreen }) {
   const tabs = [
     { id: 'home',    label: 'Home',    icon: '⌂' },
     { id: 'browse',  label: 'Browse',  icon: '⊞' },
-    { id: 'sell',    label: 'Sell',    icon: '+' },
+    { id: 'sell',    label: 'List',    icon: '+' },
     { id: 'profile', label: 'Profile', icon: '◯' },
   ];
   return (
