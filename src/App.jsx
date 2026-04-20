@@ -1057,12 +1057,287 @@ function ListGarmentScreen() {
   );
 }
 
+// ─── Profile mock data ────────────────────────────────────────────────────────
+const MY_LISTINGS = [
+  { ...GARMENTS[0], status: 'active'  },
+  { ...GARMENTS[1], status: 'active'  },
+  { ...GARMENTS[4], status: 'active'  },
+  { ...GARMENTS[7], status: 'rented'  },
+  { ...GARMENTS[2], status: 'rented'  },
+  { ...GARMENTS[3], status: 'sold'    },
+  { ...GARMENTS[6], status: 'sold'    },
+];
+
+const STATUS_STYLE = {
+  active: { bg: '#EAE6DC', color: '#2C2418', label: 'Active'     },
+  rented: { bg: '#E0EDE4', color: '#2A5035', label: 'Rented out' },
+  sold:   { bg: '#F0E8DE', color: '#5C3E26', label: 'Sold'       },
+};
+
+// ─── Burger menu drawer ───────────────────────────────────────────────────────
+function BurgerDrawer({ onClose }) {
+  const items = [
+    { label: 'Edit profile',      icon: '○' },
+    { label: 'Notifications',     icon: '○' },
+    { label: 'Payment & payouts', icon: '○' },
+    { label: 'DRAPED guarantee',  icon: '○' },
+    { label: 'Help & support',    icon: '○' },
+  ];
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(44,36,24,0.35)',
+          zIndex: 200,
+        }}
+      />
+      {/* Drawer */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: 260, background: C.parchment,
+        zIndex: 201, display: 'flex', flexDirection: 'column',
+        maxWidth: '390px',
+      }}>
+        {/* Drawer header */}
+        <div style={{
+          height: 52, display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', padding: '0 20px',
+          borderBottom: `0.5px solid ${C.linen}`,
+        }}>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 18, fontWeight: 400, color: C.umber, letterSpacing: '0.10em',
+          }}>
+            MENU
+          </span>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: C.stone, lineHeight: 1, padding: 0,
+            fontFamily: 'inherit',
+          }}>×</button>
+        </div>
+
+        {/* Profile mini */}
+        <div style={{
+          padding: '20px', borderBottom: `0.5px solid ${C.linen}`,
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%', background: C.umber,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 16, fontWeight: 400, color: C.parchment, flexShrink: 0,
+          }}>PS</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: C.umber }}>Priya Sharma</div>
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 2 }}>View profile</div>
+          </div>
+        </div>
+
+        {/* Menu items */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {items.map((item, i) => (
+            <div key={item.label}>
+              <button style={{
+                width: '100%', padding: '14px 20px', background: 'none',
+                border: 'none', cursor: 'pointer', textAlign: 'left',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                fontFamily: 'inherit',
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 400, color: C.umber }}>
+                  {item.label}
+                </span>
+                <span style={{ fontSize: 12, color: C.stone }}>›</span>
+              </button>
+              {i < items.length - 1 && (
+                <div style={{ height: '0.5px', background: C.linen, margin: '0 20px' }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Sign out */}
+        <div style={{ padding: '16px 20px', borderTop: `0.5px solid ${C.linen}` }}>
+          <button style={{
+            width: '100%', padding: '13px', background: 'none',
+            border: `0.5px solid ${C.linen}`, borderRadius: 4, cursor: 'pointer',
+            fontSize: 14, fontWeight: 500, color: C.stone, fontFamily: 'inherit',
+          }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Screen: Profile ──────────────────────────────────────────────────────────
+function ProfileScreen({ onViewGarment }) {
+  const [listingTab, setListingTab] = useState('active');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const visibleListings = MY_LISTINGS.filter(g => g.status === listingTab);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {drawerOpen && <BurgerDrawer onClose={() => setDrawerOpen(false)} />}
+
+      {/* ── Profile Header ── */}
+      <div style={{ background: C.cream, padding: '24px 16px 20px', position: 'relative' }}>
+        {/* Hamburger */}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          style={{
+            position: 'absolute', top: 20, right: 16,
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 4, display: 'flex', flexDirection: 'column', gap: 4,
+          }}
+          aria-label="Menu"
+        >
+          {[0,1,2].map(i => (
+            <span key={i} style={{
+              display: 'block', width: 20, height: '1.5px', background: C.umber,
+            }} />
+          ))}
+        </button>
+
+        {/* Avatar + identity */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%', background: C.umber,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 22, fontWeight: 400, color: C.parchment,
+          }}>
+            PS
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 20, fontWeight: 400, color: C.umber, marginBottom: 4,
+            }}>
+              Priya Sharma
+            </div>
+            <div style={{ fontSize: 12, color: C.stone, marginBottom: 6 }}>
+              Member since March 2024
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: C.umber }}>
+              ⭐ 4.9 · 28 reviews
+            </div>
+          </div>
+        </div>
+
+        {/* Stat pills */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 16 }}>
+          {[['12', 'Active Listings'], ['8', 'Completed Rentals']].map(([num, label]) => (
+            <div key={label} style={{
+              background: C.white, border: `0.5px solid ${C.linen}`,
+              borderRadius: 20, padding: '6px 16px', textAlign: 'center',
+            }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: C.umber }}>
+                {num} {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '24px 16px 80px' }}>
+
+        {/* ── Earnings ── */}
+        <Section title="This month">
+          <div style={{
+            background: C.white, border: `0.5px solid ${C.linen}`,
+            borderRadius: 12, padding: '16px 20px',
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{ fontSize: 12, color: C.stone, marginBottom: 4 }}>Earnings</div>
+              <div style={{ fontSize: 12, color: C.stone, marginTop: 8 }}>
+                2 rentals · 1 sale
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 28, fontWeight: 400, color: C.umber, lineHeight: 1,
+              }}>
+                $340
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* ── My Listings ── */}
+        <div>
+          <div style={{
+            fontSize: 11, fontWeight: 500, color: C.stone,
+            textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 12,
+          }}>
+            My listings
+          </div>
+
+          {/* Filter tabs */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {[['active','Active'], ['rented','Rented out'], ['sold','Sold']].map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => setListingTab(val)}
+                style={{
+                  height: 36, padding: '0 16px', borderRadius: 20, border: 'none',
+                  background: listingTab === val ? C.umber : C.cream,
+                  color: listingTab === val ? C.parchment : '#4A3F2C',
+                  fontSize: 13, fontWeight: 500, letterSpacing: '0.03em',
+                  cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Card grid with status badge overlay */}
+          {visibleListings.length === 0 ? (
+            <div style={{ color: C.stone, padding: '40px 0', fontSize: 14, textAlign: 'center' }}>
+              No {listingTab} listings.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {visibleListings.map(g => {
+                const s = STATUS_STYLE[g.status];
+                return (
+                  <div key={g.id} style={{ position: 'relative' }}>
+                    <GarmentCard garment={g} onTap={onViewGarment} />
+                    {/* Status badge overlay */}
+                    <div style={{
+                      position: 'absolute', top: 8, left: 8,
+                      background: s.bg, color: s.color,
+                      fontSize: 11, fontWeight: 500, letterSpacing: '0.05em',
+                      padding: '3px 10px', borderRadius: 20,
+                      pointerEvents: 'none',
+                    }}>
+                      {s.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 function BottomNav({ screen, setScreen }) {
   const tabs = [
-    { id: 'home',   label: 'Home',   icon: '⌂' },
-    { id: 'browse', label: 'Browse', icon: '⊞' },
-    { id: 'sell',   label: 'Sell',   icon: '+' },
+    { id: 'home',    label: 'Home',    icon: '⌂' },
+    { id: 'browse',  label: 'Browse',  icon: '⊞' },
+    { id: 'sell',    label: 'Sell',    icon: '+' },
+    { id: 'profile', label: 'Profile', icon: '◯' },
   ];
   return (
     <div style={{
@@ -1072,7 +1347,7 @@ function BottomNav({ screen, setScreen }) {
       display: 'flex', zIndex: 100,
     }}>
       {tabs.map(tab => {
-        const active = screen === tab.id || (screen === 'detail' && tab.id === 'browse');
+        const active = screen === tab.id || (screen === 'detail' && tab.id === 'browse') || (screen === 'detail' && tab.id === 'browse');
         return (
           <button
             key={tab.id}
@@ -1133,10 +1408,11 @@ export default function App() {
         minHeight: '100vh', position: 'relative', overflowX: 'hidden',
       }}>
         <div style={{ paddingBottom: 64, overflowY: 'auto', minHeight: '100vh' }}>
-          {screen === 'home'   && <HomeScreen onViewGarment={handleViewGarment} />}
-          {screen === 'browse' && <BrowseScreen onViewGarment={handleViewGarment} />}
-          {screen === 'sell'   && <ListGarmentScreen />}
-          {screen === 'detail' && selectedGarment && (
+          {screen === 'home'    && <HomeScreen onViewGarment={handleViewGarment} />}
+          {screen === 'browse'  && <BrowseScreen onViewGarment={handleViewGarment} />}
+          {screen === 'sell'    && <ListGarmentScreen />}
+          {screen === 'profile' && <ProfileScreen onViewGarment={handleViewGarment} />}
+          {screen === 'detail'  && selectedGarment && (
             <GarmentDetail garment={selectedGarment} onBack={() => handleNav('browse')} />
           )}
         </div>
