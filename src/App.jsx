@@ -101,7 +101,7 @@ const GARMENTS = [
   },
   {
     id: 6,
-    photo: 'salwar,india/all?lock=1',
+    photo: '/images/pastel-pink-kurta.png',
     name: 'Pastel Pink Kurta Set',
     type: 'Kurta Set',
     occasion: ['Eid', 'Diwali', 'Engagement'],
