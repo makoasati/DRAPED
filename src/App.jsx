@@ -403,7 +403,7 @@ const Divider = () => (
 );
 
 // ─── Screen: Home ─────────────────────────────────────────────────────────────
-function HomeScreen({ onViewGarment, onGoToBrowse }) {
+function HomeScreen({ onViewGarment, onGoToBrowse, onOpenConcierge }) {
   const [selectedOccasion, setSelectedOccasion] = useState(null);
   const [searchQuery, setSearchQuery]           = useState('');
   const [searchOpen, setSearchOpen]             = useState(false);
@@ -522,6 +522,33 @@ function HomeScreen({ onViewGarment, onGoToBrowse }) {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Concierge banner */}
+        <div style={{
+          background: C.umber, borderRadius: 12, padding: 20, marginBottom: 24,
+        }}>
+          <div style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 18, fontWeight: 400, color: C.parchment, marginBottom: 6,
+          }}>
+            List without the hassle.
+          </div>
+          <div style={{
+            fontSize: 13, color: 'rgba(250,250,240,0.70)', lineHeight: 1.6, marginBottom: 16,
+          }}>
+            Our team comes to you, photographs your pieces, and lists them for you.
+          </div>
+          <button
+            onClick={onOpenConcierge}
+            style={{
+              height: 40, padding: '0 20px', background: C.terracotta, color: C.parchment,
+              border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Book a home visit
+          </button>
         </div>
 
         {/* Featured listings */}
@@ -1467,13 +1494,14 @@ function ReviewsSheet({ onClose }) {
 }
 
 // ─── Burger menu drawer ───────────────────────────────────────────────────────
-function BurgerDrawer({ onClose }) {
+function BurgerDrawer({ onClose, onOpenConcierge }) {
   const items = [
-    { label: 'Edit profile',      icon: '○' },
-    { label: 'Notifications',     icon: '○' },
-    { label: 'Payment & payouts', icon: '○' },
-    { label: 'DRAPED guarantee',  icon: '○' },
-    { label: 'Help & support',    icon: '○' },
+    { label: 'Edit profile',      onClick: null },
+    { label: 'Notifications',     onClick: null },
+    { label: 'Payment & payouts', onClick: null },
+    { label: 'DRAPED guarantee',  onClick: null },
+    { label: 'Book Concierge',    onClick: () => { onClose(); onOpenConcierge(); } },
+    { label: 'Help & support',    onClick: null },
   ];
   return (
     <>
@@ -1532,7 +1560,7 @@ function BurgerDrawer({ onClose }) {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {items.map((item, i) => (
             <div key={item.label}>
-              <button style={{
+              <button onClick={item.onClick || undefined} style={{
                 width: '100%', padding: '14px 20px', background: 'none',
                 border: 'none', cursor: 'pointer', textAlign: 'left',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1566,7 +1594,7 @@ function BurgerDrawer({ onClose }) {
 }
 
 // ─── Screen: Profile ──────────────────────────────────────────────────────────
-function ProfileScreen({ onViewGarment }) {
+function ProfileScreen({ onViewGarment, onOpenConcierge }) {
   const [listingTab, setListingTab]   = useState('active');
   const [drawerOpen, setDrawerOpen]   = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
@@ -1575,7 +1603,7 @@ function ProfileScreen({ onViewGarment }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {drawerOpen  && <BurgerDrawer onClose={() => setDrawerOpen(false)} />}
+      {drawerOpen  && <BurgerDrawer onClose={() => setDrawerOpen(false)} onOpenConcierge={onOpenConcierge} />}
       {reviewsOpen && <ReviewsSheet onClose={() => setReviewsOpen(false)} />}
 
       {/* ── Profile Header ── */}
@@ -1735,6 +1763,193 @@ function ProfileScreen({ onViewGarment }) {
   );
 }
 
+// ─── Screen: Concierge ────────────────────────────────────────────────────────
+function ConciergeScreen({ onBack, onGoHome }) {
+  const [conciergeSubmitted, setConciergeSubmitted] = useState(false);
+  const [selectedGarmentCount, setSelectedGarmentCount] = useState('');
+  const [selectedTiming, setSelectedTiming]             = useState('');
+  const [cName, setCName]   = useState('');
+  const [cPhone, setCPhone] = useState('');
+  const [cArea, setCArea]   = useState('');
+  const [cNotes, setCNotes] = useState('');
+
+  if (conciergeSubmitted) {
+    return (
+      <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 48, color: C.terracotta, lineHeight: 1, marginBottom: 20 }}>✓</div>
+        <h2 style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 22, fontWeight: 400, color: C.umber, margin: '0 0 12px',
+        }}>
+          Request received.
+        </h2>
+        <p style={{ fontSize: 14, color: C.stone, lineHeight: 1.7, margin: '0 0 32px', textAlign: 'center' }}>
+          Our team will be in touch within 24 hours to confirm your appointment.
+        </p>
+        <button onClick={onGoHome} style={secondaryBtn}>Back to Home</button>
+      </div>
+    );
+  }
+
+  const pillStyle = (active) => ({
+    flex: 1, height: 36, borderRadius: 20, border: 'none',
+    background: active ? C.umber : C.cream,
+    color: active ? C.parchment : '#4A3F2C',
+    fontSize: 13, fontWeight: 500, letterSpacing: '0.03em',
+    cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit',
+  });
+
+  return (
+    <div>
+      {/* Back bar */}
+      <div style={{
+        height: 52, display: 'flex', alignItems: 'center',
+        padding: '0 16px', borderBottom: `0.5px solid ${C.linen}`,
+        background: C.parchment, position: 'sticky', top: 0, zIndex: 20,
+      }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: 18, color: C.umber, padding: 0, marginRight: 10,
+          lineHeight: 1, fontFamily: 'inherit',
+        }}>←</button>
+        <span style={{ fontSize: 14, fontWeight: 500, color: C.umber }}>Back</span>
+      </div>
+
+      <div style={{ padding: '32px 16px 110px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 500, color: C.stone,
+            textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 8,
+          }}>
+            Concierge Service
+          </div>
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 24, fontWeight: 400, color: C.umber,
+            lineHeight: 1.3, margin: '0 0 12px',
+          }}>
+            We come to you.
+          </h1>
+          <p style={{ fontSize: 14, color: C.stone, margin: 0, lineHeight: 1.7 }}>
+            Tell us a bit about your collection and we'll be in touch to confirm your appointment.
+          </p>
+        </div>
+
+        {/* How it works — 3 step cards */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+          {[
+            { emoji: '📸', title: 'We photograph', body: 'Professional shots of every piece' },
+            { emoji: '✍️', title: 'We list',        body: 'Descriptions, pricing, measurements' },
+            { emoji: '💰', title: 'You earn',        body: 'Sit back while DRAPED does the work' },
+          ].map(step => (
+            <div key={step.title} style={{
+              flex: 1, background: C.cream, borderRadius: 12, padding: 16,
+            }}>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>{step.emoji}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: C.umber, marginBottom: 4 }}>
+                {step.title}
+              </div>
+              <div style={{ fontSize: 11, color: C.stone, lineHeight: 1.5 }}>{step.body}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Form */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Name */}
+          <div>
+            <FieldLabel>Your name</FieldLabel>
+            <TextInput value={cName} onChange={setCName} placeholder="e.g. Priya Sharma" />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <FieldLabel>Phone number</FieldLabel>
+            <TextInput value={cPhone} onChange={setCPhone} placeholder="e.g. (312) 555-0192" type="tel" />
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 6 }}>
+              We'll call to confirm your appointment time.
+            </div>
+          </div>
+
+          {/* Area */}
+          <div>
+            <FieldLabel>Your area</FieldLabel>
+            <TextInput value={cArea} onChange={setCArea} placeholder="e.g. Lincoln Park, Chicago" />
+            <div style={{ fontSize: 12, color: C.stone, marginTop: 6 }}>
+              We'll match you with the nearest available team.
+            </div>
+          </div>
+
+          {/* Garment count pills */}
+          <div>
+            <FieldLabel>Number of garments</FieldLabel>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['1–5', '6–15', '16–30', '30+'].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedGarmentCount(opt)}
+                  style={pillStyle(selectedGarmentCount === opt)}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Timing pills */}
+          <div>
+            <FieldLabel>When works for you?</FieldLabel>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['This week', 'Next week', 'Flexible'].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedTiming(opt)}
+                  style={pillStyle(selectedTiming === opt)}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <FieldLabel>Notes (optional)</FieldLabel>
+            <textarea
+              value={cNotes}
+              onChange={e => setCNotes(e.target.value)}
+              placeholder="e.g. I have 10 lehengas and 5 sarees, all from 2018–2023"
+              rows={4}
+              style={{
+                width: '100%', border: `0.5px solid ${C.linen}`, borderRadius: 6,
+                padding: '12px 14px', fontSize: 14, color: C.umber, background: C.white,
+                fontFamily: 'inherit', lineHeight: 1.6, resize: 'none', outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* Pricing note */}
+          <div style={{
+            background: C.cream, borderRadius: 8, padding: '12px 16px',
+          }}>
+            <p style={{ fontSize: 12, color: C.stone, lineHeight: 1.6, margin: 0 }}>
+              Our team will review your request and confirm availability and pricing within 24 hours.
+            </p>
+          </div>
+
+          {/* Submit */}
+          <button onClick={() => setConciergeSubmitted(true)} style={primaryBtn}>
+            Request a Home Visit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 function BottomNav({ screen, setScreen }) {
   const tabs = [
@@ -1783,6 +1998,7 @@ function BottomNav({ screen, setScreen }) {
 export default function App() {
   const [screen, setScreen]                   = useState('home');
   const [selectedGarment, setSelectedGarment] = useState(null);
+  const [prevScreen, setPrevScreen]           = useState('home');
 
   function handleViewGarment(garment) {
     setSelectedGarment(garment);
@@ -1792,6 +2008,11 @@ export default function App() {
   function handleNav(id) {
     setSelectedGarment(null);
     setScreen(id);
+  }
+
+  function handleOpenConcierge() {
+    setPrevScreen(screen);
+    setScreen('concierge');
   }
 
   return (
@@ -1812,12 +2033,18 @@ export default function App() {
         minHeight: '100vh', position: 'relative', overflowX: 'hidden',
       }}>
         <div style={{ paddingBottom: 64, overflowY: 'auto', minHeight: '100vh' }}>
-          {screen === 'home'    && <HomeScreen onViewGarment={handleViewGarment} />}
+          {screen === 'home'    && <HomeScreen onViewGarment={handleViewGarment} onOpenConcierge={handleOpenConcierge} />}
           {screen === 'browse'  && <BrowseScreen onViewGarment={handleViewGarment} />}
           {screen === 'sell'    && <ListGarmentScreen />}
-          {screen === 'profile' && <ProfileScreen onViewGarment={handleViewGarment} />}
+          {screen === 'profile' && <ProfileScreen onViewGarment={handleViewGarment} onOpenConcierge={handleOpenConcierge} />}
           {screen === 'detail'  && selectedGarment && (
             <GarmentDetail garment={selectedGarment} onBack={() => handleNav('browse')} />
+          )}
+          {screen === 'concierge' && (
+            <ConciergeScreen
+              onBack={() => setScreen(prevScreen)}
+              onGoHome={() => handleNav('home')}
+            />
           )}
         </div>
         <BottomNav screen={screen} setScreen={handleNav} />
