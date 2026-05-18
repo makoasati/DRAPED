@@ -1494,11 +1494,12 @@ function ReviewsSheet({ onClose }) {
 }
 
 // ─── Burger menu drawer ───────────────────────────────────────────────────────
-function BurgerDrawer({ onClose, onOpenConcierge }) {
+function BurgerDrawer({ onClose, onOpenConcierge, onOpenRentals }) {
   const items = [
     { label: 'Edit profile',      onClick: null },
     { label: 'Notifications',     onClick: null },
     { label: 'Payment & payouts', onClick: null },
+    { label: 'My Rentals & Purchases', onClick: () => { onClose(); onOpenRentals(); } },
     { label: 'DRAPED guarantee',  onClick: null },
     { label: 'Book Concierge',    onClick: () => { onClose(); onOpenConcierge(); } },
     { label: 'Help & support',    onClick: null },
@@ -1594,7 +1595,7 @@ function BurgerDrawer({ onClose, onOpenConcierge }) {
 }
 
 // ─── Screen: Profile ──────────────────────────────────────────────────────────
-function ProfileScreen({ onViewGarment, onOpenConcierge }) {
+function ProfileScreen({ onViewGarment, onOpenConcierge, onOpenRentals }) {
   const [listingTab, setListingTab]   = useState('active');
   const [drawerOpen, setDrawerOpen]   = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
@@ -1603,7 +1604,13 @@ function ProfileScreen({ onViewGarment, onOpenConcierge }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {drawerOpen  && <BurgerDrawer onClose={() => setDrawerOpen(false)} onOpenConcierge={onOpenConcierge} />}
+      {drawerOpen  && (
+        <BurgerDrawer
+          onClose={() => setDrawerOpen(false)}
+          onOpenConcierge={onOpenConcierge}
+          onOpenRentals={onOpenRentals}
+        />
+      )}
       {reviewsOpen && <ReviewsSheet onClose={() => setReviewsOpen(false)} />}
 
       {/* ── Profile Header ── */}
@@ -1950,6 +1957,467 @@ function ConciergeScreen({ onBack, onGoHome }) {
   );
 }
 
+// ─── My Rentals mock data ─────────────────────────────────────────────────────
+const MY_RENTALS = [
+  { id: 1, garment: GARMENTS[0], status: 'Active',    rentedFrom: 'May 14, 2026', returnBy: 'May 22, 2026' },
+  { id: 2, garment: GARMENTS[4], status: 'Upcoming',  rentedFrom: 'May 15, 2026', returnBy: 'May 19, 2026' },
+  { id: 3, garment: GARMENTS[2], status: 'Completed', rentedFrom: 'Apr 27, 2026', returnBy: 'Apr 30, 2026' },
+  { id: 4, garment: GARMENTS[7], status: 'Completed', rentedFrom: 'Mar 11, 2026', returnBy: 'Mar 15, 2026' },
+];
+
+const PARTNER_CLEANERS = [
+  { id: 1, name: 'Prestige Cleaners',     address: '2410 N Lincoln Ave',   distance: '0.8 miles away' },
+  { id: 2, name: 'Royal Dry Cleaning',    address: '5521 N Clark St',      distance: '1.4 miles away' },
+  { id: 3, name: 'Heritage Garment Care', address: '900 W Diversey Pkwy',  distance: '2.1 miles away' },
+  { id: 4, name: 'Fine Fabric Cleaners',  address: '3241 W Armitage Ave',  distance: '2.6 miles away' },
+  {
+    id: 5,
+    name: 'I already have a cleaner arranged',
+    address: 'Use my own trusted dry cleaner for drop-off',
+    distance: 'You will coordinate directly with them',
+    isIndependent: true,
+  },
+];
+
+const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '2:00 PM', '4:00 PM'];
+
+const CONDITION_ITEMS = [
+  'No new stains or marks',
+  'Embroidery and embellishments intact',
+  'No tears or loose threads',
+  'Garment matches original condition photos',
+];
+
+// ─── Screen: My Rentals & Purchases ──────────────────────────────────────────
+function MyRentalsScreen({ onBack, onReturnGarment }) {
+  return (
+    <div>
+      <div style={{
+        height: 52, display: 'flex', alignItems: 'center',
+        padding: '0 16px', borderBottom: `0.5px solid ${C.linen}`,
+        background: C.parchment, position: 'sticky', top: 0, zIndex: 20,
+      }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: 18, color: C.umber, padding: 0, marginRight: 10,
+          lineHeight: 1, fontFamily: 'inherit',
+        }}>←</button>
+        <span style={{ fontSize: 14, fontWeight: 500, color: C.umber }}>My Rentals & Purchases</span>
+      </div>
+
+      <div style={{ padding: '24px 16px 80px' }}>
+        {MY_RENTALS.map(rental => {
+          const canReturn = rental.status === 'Upcoming' || rental.status === 'Active';
+          const statusMap = {
+            Upcoming: { bg: C.cream, color: C.umber },
+            Active: { bg: '#E0EDE4', color: '#2A5035' },
+            Completed: { bg: '#F0E8DE', color: '#5C3E26' },
+          };
+          const statusStyle = statusMap[rental.status] || statusMap.Completed;
+          return (
+            <div key={rental.id} style={{
+              background: C.white, border: `0.5px solid ${C.linen}`,
+              borderRadius: 12, overflow: 'hidden', marginBottom: 12,
+            }}>
+              <div style={{ display: 'flex', gap: 12, padding: '14px 16px' }}>
+                <img
+                  src={photoUrl(rental.garment.photo, 80, 107)}
+                  alt={rental.garment.name}
+                  style={{ width: 64, height: 85, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 500, color: C.umber,
+                    marginBottom: 4, lineHeight: 1.4,
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {rental.garment.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.stone, marginBottom: 8 }}>
+                    {rental.rentedFrom} – {rental.returnBy}
+                  </div>
+                  <span style={{
+                    display: 'inline-block', background: statusStyle.bg, color: statusStyle.color,
+                    fontSize: 11, fontWeight: 500, letterSpacing: '0.05em',
+                    padding: '3px 10px', borderRadius: 20,
+                  }}>
+                    {rental.status}
+                  </span>
+                </div>
+              </div>
+              {canReturn && (
+                <div style={{ padding: '12px 16px 14px', borderTop: `0.5px solid ${C.linen}` }}>
+                  <button
+                    onClick={() => onReturnGarment(rental)}
+                    style={{
+                      height: 36, padding: '0 16px',
+                      background: 'transparent', color: C.umber,
+                      border: `0.5px solid ${C.umber}`,
+                      borderRadius: 4, fontSize: 12, fontWeight: 500,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Return Garment
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen: Return Flow ──────────────────────────────────────────────────────
+function ReturnFlowScreen({ rental, onBack, onComplete }) {
+  const [returnStep, setReturnStep]           = useState(1);
+  const [checkedItems, setCheckedItems]       = useState([false, false, false, false]);
+  const [conditionNote, setConditionNote]     = useState('');
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [selectedDate, setSelectedDate]       = useState(null);
+  const [selectedTime, setSelectedTime]       = useState(null);
+  const [returnConfirmed, setReturnConfirmed] = useState(false);
+
+  const allChecked = checkedItems.every(Boolean);
+  const partner    = PARTNER_CLEANERS.find(p => p.id === selectedPartner);
+  const canConfirm = selectedDate && selectedTime;
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return {
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      date:  d.getDate(),
+      full:  d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    };
+  });
+
+  if (returnConfirmed) {
+    return (
+      <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 48, color: C.terracotta, lineHeight: 1, marginBottom: 20 }}>✓</div>
+        <h2 style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 22, fontWeight: 400, color: C.umber, margin: '0 0 12px',
+        }}>Return scheduled.</h2>
+        <p style={{ fontSize: 14, color: C.stone, lineHeight: 1.7, margin: '0 0 4px', textAlign: 'center' }}>
+          Drop off your {rental.garment.name} at {partner.name} on {selectedDate}. They'll take care of the rest.
+        </p>
+        <div style={{
+          background: C.cream, borderRadius: 12, padding: '16px 20px',
+          margin: '24px 0', textAlign: 'left',
+        }}>
+          {[['Drop-off', partner.name], ['Date', selectedDate], ['Time', selectedTime]].map(([label, value], i, arr) => (
+            <div key={label} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '8px 0',
+              borderBottom: i < arr.length - 1 ? `0.5px solid ${C.linen}` : 'none',
+            }}>
+              <span style={{
+                fontSize: 11, fontWeight: 500, color: C.stone,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>{label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: C.umber }}>{value}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onComplete} style={secondaryBtn}>Back to My Rentals</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Sticky header — back arrow + step label + progress bar */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 20,
+        background: C.parchment, borderBottom: `0.5px solid ${C.linen}`,
+        paddingBottom: 12,
+      }}>
+        <div style={{ height: 52, display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+          <button
+            onClick={() => returnStep > 1 ? setReturnStep(s => s - 1) : onBack()}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 18, color: C.umber, padding: 0, marginRight: 10,
+              lineHeight: 1, fontFamily: 'inherit',
+            }}
+          >←</button>
+          <span style={{ fontSize: 12, color: C.stone }}>Step {returnStep} of 3</span>
+        </div>
+        <div style={{ margin: '0 16px', height: 2, background: C.linen, borderRadius: 1 }}>
+          <div style={{
+            height: 2, background: C.umber, borderRadius: 1,
+            width: `${(returnStep / 3) * 100}%`,
+          }} />
+        </div>
+      </div>
+
+      <div style={{ padding: '24px 16px 110px' }}>
+
+        {/* ── Step 1 — Condition check ── */}
+        {returnStep === 1 && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 500, color: C.stone,
+                textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 8,
+              }}>Before you return</div>
+              <h2 style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 22, fontWeight: 400, color: C.umber, margin: '0 0 10px', lineHeight: 1.3,
+              }}>How is the garment?</h2>
+              <p style={{ fontSize: 14, color: C.stone, margin: 0, lineHeight: 1.7 }}>
+                Please inspect the garment before drop-off. This protects both you and the owner.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              {CONDITION_ITEMS.map((item, i) => (
+                <div
+                  key={i}
+                  onClick={() => setCheckedItems(prev => prev.map((v, j) => j === i ? !v : v))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    background: C.white, border: `0.5px solid ${C.linen}`,
+                    borderRadius: 8, padding: '14px 16px', marginBottom: 8, cursor: 'pointer',
+                  }}
+                >
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                    background: checkedItems[i] ? C.umber : 'transparent',
+                    border: `0.5px solid ${checkedItems[i] ? C.umber : C.linen}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {checkedItems[i] && (
+                      <span style={{ color: C.parchment, fontSize: 11, lineHeight: 1 }}>✓</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 14, color: C.umber }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <FieldLabel>Any issues to note?</FieldLabel>
+              <textarea
+                value={conditionNote}
+                onChange={e => setConditionNote(e.target.value)}
+                placeholder="e.g. Small pull on left sleeve seam — pre-existing"
+                rows={3}
+                style={{
+                  width: '100%', border: `0.5px solid ${C.linen}`, borderRadius: 6,
+                  padding: '12px 14px', fontSize: 14, color: C.umber, background: C.white,
+                  fontFamily: 'inherit', lineHeight: 1.6, resize: 'none', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ fontSize: 12, color: C.stone, marginTop: 6, lineHeight: 1.6 }}>
+                This is shared with the owner and protects you from disputes.
+              </div>
+            </div>
+
+            <button
+              onClick={() => { if (allChecked) setReturnStep(2); }}
+              style={{ ...primaryBtn, opacity: allChecked ? 1 : 0.4, cursor: allChecked ? 'pointer' : 'default' }}
+            >
+              Continue to Drop-off
+            </button>
+          </div>
+        )}
+
+        {/* ── Step 2 — Select partner ── */}
+        {returnStep === 2 && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 500, color: C.stone,
+                textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 8,
+              }}>Drop-off location</div>
+              <h2 style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 22, fontWeight: 400, color: C.umber, margin: '0 0 10px', lineHeight: 1.3,
+              }}>Select a DRAPED partner</h2>
+              <p style={{ fontSize: 14, color: C.stone, margin: '0 0 16px', lineHeight: 1.7 }}>
+                Drop your garment here. The cleaner will inspect, clean, and ship it back to the owner.
+              </p>
+            </div>
+
+            <input
+              value=""
+              readOnly
+              placeholder="Search by zip or neighbourhood"
+              style={{
+                width: '100%', height: 48, background: C.white,
+                border: `0.5px solid ${C.linen}`, borderRadius: 6, padding: '0 14px',
+                fontSize: 14, fontWeight: 400, color: C.umber, marginBottom: 16,
+                fontFamily: 'inherit', boxSizing: 'border-box',
+              }}
+            />
+
+            {PARTNER_CLEANERS.map(p => {
+              const sel = selectedPartner === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedPartner(p.id)}
+                  style={{
+                    background: sel ? C.parchment : C.white,
+                    border: sel ? `1px solid ${C.umber}` : `0.5px solid ${C.linen}`,
+                    borderRadius: 12, padding: 16, marginBottom: 10, cursor: 'pointer',
+                  }}
+                >
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    marginBottom: 6,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: C.umber, flexShrink: 0 }}>
+                        {p.name}
+                      </span>
+                      {!p.isIndependent && (
+                        <span style={{
+                          background: C.cream, color: C.terracotta,
+                          fontSize: 10, fontWeight: 500, letterSpacing: '0.05em',
+                          borderRadius: 20, padding: '2px 8px', flexShrink: 0,
+                        }}>
+                          DRAPED PARTNER
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      background: sel ? C.umber : 'transparent',
+                      border: `0.5px solid ${sel ? C.umber : C.linen}`,
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 13, color: C.stone, marginBottom: 6 }}>{p.address}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: C.stone }}>{p.distance}</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: C.terracotta }}>
+                      {p.isIndependent ? 'Continue' : 'Get Directions'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            <button
+              onClick={() => { if (selectedPartner) setReturnStep(3); }}
+              style={{ ...primaryBtn, marginTop: 4, opacity: selectedPartner ? 1 : 0.4, cursor: selectedPartner ? 'pointer' : 'default' }}
+            >
+              Confirm Drop-off Location
+            </button>
+          </div>
+        )}
+
+        {/* ── Step 3 — Schedule drop-off ── */}
+        {returnStep === 3 && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 500, color: C.stone,
+                textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 8,
+              }}>Schedule your drop-off</div>
+              <h2 style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 22, fontWeight: 400, color: C.umber, margin: '0 0 16px', lineHeight: 1.3,
+              }}>When will you drop off?</h2>
+            </div>
+
+            {/* Selected location card */}
+            <div style={{
+              background: C.cream, borderRadius: 12, padding: '14px 16px', marginBottom: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: C.umber }}>{partner.name}</div>
+                <div style={{ fontSize: 12, color: C.stone, marginTop: 2 }}>{partner.address}</div>
+              </div>
+              <button
+                onClick={() => setReturnStep(2)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 500, color: C.terracotta,
+                  padding: 0, fontFamily: 'inherit', flexShrink: 0,
+                }}
+              >Change</button>
+            </div>
+
+            {/* Date pills */}
+            <div style={{ marginBottom: 20 }}>
+              <FieldLabel>Select a date</FieldLabel>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                {days.map((day, i) => {
+                  const sel = selectedDate === day.full;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedDate(day.full)}
+                      style={{
+                        flexShrink: 0, width: 52, height: 56, borderRadius: 12, border: 'none',
+                        background: sel ? C.umber : C.cream,
+                        color: sel ? C.parchment : '#4A3F2C',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11, fontWeight: 400 }}>{day.label}</span>
+                      <span style={{ fontSize: 16, fontWeight: 500 }}>{day.date}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Time slots */}
+            <div style={{ marginBottom: 20 }}>
+              <FieldLabel>Select a time</FieldLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {TIME_SLOTS.map(slot => {
+                  const sel = selectedTime === slot;
+                  return (
+                    <button
+                      key={slot}
+                      onClick={() => setSelectedTime(slot)}
+                      style={{
+                        height: 36, borderRadius: 20, border: 'none',
+                        background: sel ? C.umber : C.cream,
+                        color: sel ? C.parchment : '#4A3F2C',
+                        fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {slot}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Important note */}
+            <div style={{ background: C.cream, borderRadius: 8, padding: '12px 16px', marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: C.stone, lineHeight: 1.6, margin: 0 }}>
+                The cleaner will ship the garment back to the owner within 2–3 business days of receiving it. You pay the cleaner directly at drop-off.
+              </p>
+            </div>
+
+            <button
+              onClick={() => { if (canConfirm) setReturnConfirmed(true); }}
+              style={{ ...primaryBtn, opacity: canConfirm ? 1 : 0.4, cursor: canConfirm ? 'pointer' : 'default' }}
+            >
+              Confirm Return
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 function BottomNav({ screen, setScreen }) {
   const tabs = [
@@ -1966,7 +2434,10 @@ function BottomNav({ screen, setScreen }) {
       display: 'flex', zIndex: 100,
     }}>
       {tabs.map(tab => {
-        const active = screen === tab.id || (screen === 'detail' && tab.id === 'browse') || (screen === 'detail' && tab.id === 'browse');
+        const active =
+          screen === tab.id ||
+          (screen === 'detail' && tab.id === 'browse') ||
+          ((screen === 'myRentals' || screen === 'returnFlow') && tab.id === 'profile');
         return (
           <button
             key={tab.id}
@@ -1998,6 +2469,7 @@ function BottomNav({ screen, setScreen }) {
 export default function App() {
   const [screen, setScreen]                   = useState('home');
   const [selectedGarment, setSelectedGarment] = useState(null);
+  const [selectedRental, setSelectedRental]   = useState(null);
   const [prevScreen, setPrevScreen]           = useState('home');
 
   function handleViewGarment(garment) {
@@ -2007,12 +2479,23 @@ export default function App() {
 
   function handleNav(id) {
     setSelectedGarment(null);
+    if (id !== 'returnFlow') setSelectedRental(null);
     setScreen(id);
   }
 
   function handleOpenConcierge() {
     setPrevScreen(screen);
     setScreen('concierge');
+  }
+
+  function handleOpenRentals() {
+    setPrevScreen(screen);
+    setScreen('myRentals');
+  }
+
+  function handleReturnGarment(rental) {
+    setSelectedRental(rental);
+    setScreen('returnFlow');
   }
 
   return (
@@ -2036,9 +2519,28 @@ export default function App() {
           {screen === 'home'    && <HomeScreen onViewGarment={handleViewGarment} onOpenConcierge={handleOpenConcierge} />}
           {screen === 'browse'  && <BrowseScreen onViewGarment={handleViewGarment} />}
           {screen === 'sell'    && <ListGarmentScreen />}
-          {screen === 'profile' && <ProfileScreen onViewGarment={handleViewGarment} onOpenConcierge={handleOpenConcierge} />}
+          {screen === 'profile' && (
+            <ProfileScreen
+              onViewGarment={handleViewGarment}
+              onOpenConcierge={handleOpenConcierge}
+              onOpenRentals={handleOpenRentals}
+            />
+          )}
           {screen === 'detail'  && selectedGarment && (
             <GarmentDetail garment={selectedGarment} onBack={() => handleNav('browse')} />
+          )}
+          {screen === 'myRentals' && (
+            <MyRentalsScreen
+              onBack={() => setScreen(prevScreen)}
+              onReturnGarment={handleReturnGarment}
+            />
+          )}
+          {screen === 'returnFlow' && selectedRental && (
+            <ReturnFlowScreen
+              rental={selectedRental}
+              onBack={() => setScreen('myRentals')}
+              onComplete={() => setScreen('myRentals')}
+            />
           )}
           {screen === 'concierge' && (
             <ConciergeScreen
